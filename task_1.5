@@ -1,0 +1,185 @@
+#pragma comment (lib,"ws2_32.lib")
+#include <winsock.h>
+#include <stdio.h>
+#define BUFLEN sizeof(buf)
+
+int main()
+{
+	WSADATA wsaData;
+	SOCKADDR_IN seraddr,cliaddr;
+	SOCKET listensocket,newconnection,tempsocket;
+	ULONG sockmode;
+	int sockok,totalsock=0;
+	struct fd_set fdwrite,fdread;
+	char buf[10],buf0[10];
+	union {
+		char a[4];
+		int b;
+	}a,flag;
+	a.b=flag.b=0;
+	int cliaddrlen=sizeof(cliaddr);
+	FILE *fp;
+	long code;
+	int n,he=0,m=0,k=0,b=0;
+	char *p;
+
+		if ( WSAStartup( MAKEWORD(2,0), &wsaData ) != 0 )
+		{
+			printf("error1");
+		
+			return -1;}
+		if((listensocket=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP))==INVALID_SOCKET)
+		{
+			printf("error2");
+			return -1;
+		}
+		seraddr.sin_family=AF_INET;
+		seraddr.sin_port=htons(8080);
+		seraddr.sin_addr.s_addr=inet_addr("127.0.0.1");
+		if(SOCKET_ERROR==bind(listensocket,(SOCKADDR*)&seraddr,sizeof(seraddr)))
+		{
+			printf("error3");
+			return -1;
+		}
+
+		if(SOCKET_ERROR==listen(listensocket,5))
+		{
+			printf("error4");
+			return -1;
+		}
+		printf("wait ask");
+		sockmode=1;
+		if(SOCKET_ERROR==ioctlsocket(listensocket,FIONBIO,&sockmode))
+		{
+			printf("error on ioctl");
+			return -1;
+		}
+		if((fp=fopen("1.jpg","rb"))==NULL)  //指定的文件是否存在
+		{  //指定文件不存在
+			 printf("不能打开指定的文件!\n");
+		}
+			 fseek(fp,0,SEEK_END);   //读写指针移动到文件结尾
+				k=a.b=ftell(fp);
+				 code=htonl(m); //返回当前读写指针的位置，即得到文件长度。
+				 p=(char *)&k;
+		while(1)
+		{
+				FD_ZERO(&fdread);
+			FD_ZERO(&fdwrite);
+			FD_SET(listensocket,&fdread);
+			for(int i=0;i<totalsock;i++)
+			{
+				FD_SET(tempsocket,&fdread);
+				FD_SET(tempsocket,&fdwrite);
+			}
+			if(SOCKET_ERROR==(sockok=select(NULL,&fdread,&fdwrite,NULL,NULL)))
+			{
+				printf("error on select");
+				return -1;
+			}
+			if(FD_ISSET(listensocket,&fdread))
+			{
+				sockok--;
+				if(INVALID_SOCKET==(newconnection=accept(listensocket,(SOCKADDR*)&cliaddr,&cliaddrlen)))
+				{
+					printf("error5");
+					return -1;
+				}
+				else 
+				{
+					printf("come");
+					totalsock++;
+					tempsocket=newconnection;
+				}
+				if(SOCKET_ERROR==ioctlsocket(newconnection,FIONBIO,&sockmode))
+				{
+					printf("error on ioctl");
+					return -1;
+				}
+			}
+			
+			memset(buf,0,sizeof(buf));
+			//memset(buf0,0,sizeof(buf0));
+			if(FD_ISSET(newconnection,&fdread))
+			{
+				memset(buf,0,sizeof(buf));
+				if(flag.b==2)
+				{
+				 if(recv(newconnection,flag.a,sizeof(flag),0)<0)
+				 {
+					 printf("error on recv long");
+					 return -1;
+				 }
+				 //if(a.b==0) a.b=2;
+				
+				}
+				//else 
+				//if(recv(newconnection,buf,sizeof(buf),0)==SOCKET_ERROR)
+				//{
+			//		printf("error on recv ack");
+			//		return -1;
+			//	}
+				//if(strcmp(buf,"exit")==0)
+			//	{
+			//		printf("conplete copy");
+			//		break;
+			//	}
+			}
+			if(FD_ISSET(newconnection,&fdwrite))
+			{
+				//gets(buf0);
+				sockok--;
+			
+				 if(a.b&&flag.b==0)
+				 {
+					if((b=send(newconnection,a.a,sizeof(a),0))<0)
+					{
+					 printf("error on send");
+					 return -1;
+					 
+					//memset(a.a,0,sizeof(a));
+					}
+					flag.b=2;
+				 }
+				 if(flag.b==1)
+				{
+				
+						//  打开文件，并把文件内容发送到客户方，然后关闭文件和套接字
+						 rewind(fp);   //文件读写指针移动到文件开头
+						 while(!feof(fp))  //文件未结束
+						 {
+						  memset(buf,0,BUFLEN); //清除缓存中的内容
+						  n=fread(buf,1,BUFLEN,fp); //读取文件内容到缓存
+						  if(m=send(newconnection,buf,n,0))
+						  {
+							  if(m<0)
+							  {
+								printf("error on send main");
+								m=GetLastError();
+								return -1;
+							  }
+							if((he+=m)>=k)
+								printf("copy complete");
+						  }//send(clientSock,buf,n,0); //把文件内容发送给客户方
+						  
+						 }
+						fclose(fp);
+						break;
+				}
+				//if(strcmp(buf0,"exit")==0)
+				//	break;
+			}
+
+
+
+		}
+		
+		
+		WSACleanup( );
+		gets(buf);
+		printf("exit to exit");
+		if(strcmp("exit",buf))
+			return 0;
+
+
+}
