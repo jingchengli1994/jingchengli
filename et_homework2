@@ -1,0 +1,56 @@
+h = 1;            %步 长
+s = 11;           %0.1m
+v0 = 100;       %导体槽盖电位 
+hx = 200*h+1;    %网格横 向节点数 
+hy = 200*h+1;     %网格纵 向节点数 
+%一 一 一  一 一 一 一 设置零级近似值 一一一一一一一一一一 
+v1 = zeros(hy,hx);      %用零矩阵对网格各节点电位进行初值化
+v1(s,s:hx) = ones(1,hx-s+1)*v0;       %对右各节点赋初值 100
+v1(s:hy,s) = ones(hy-s+1,1)*v0;       %对上各节点赋初值 100
+v1(2:s-1,2:hx) = ones(s-3+1,hx-2+1)*v0/2;       %对内下部横行节点赋一任意初值
+v1(s:hy,2:s-1) = ones(hy-s+1,s-3+1)*v0/2;       %对内下部横行节点赋一任意初值
+v2 = zeros(hy,hx);      %／初值化结果变量
+%一 一 一一 一 一 一 一 以v1开始迭代计算v2一一一一一一
+for i = 2 : hy
+    for j = 2 : hx
+        if (i > s && j > s)
+            continue;
+        else if (i == s && j >= s) || (i >= s && j == s)
+            v2(i,j) = v0;       %边界
+            else if i == hy
+                v2(i,j) = (v1(i,j-1) + v1(i,j+1) + 2*v1(i-1,j))/4;
+                else if j == hx
+                    v2(i,j) = (2*v1(i,j-1) + v1(i-1,j) + v1(i+1,j))/4;
+                    else
+                        v2(i,j) = (v1(i,j-1) + v1(i,j+1) + v1(i-1,j) + v1(i+1,j))/4;
+                    end
+                end          %拉普拉斯方程
+            end
+        end
+    end
+end
+    %------- 用v2代替v1，以v1循环迭代计算v2--------------
+for k = 1:500       %循环次数
+    v1 = v2;
+    for i = 2 : hy
+        for j = 2 : hx
+            if (i > s && j > s)
+                continue;
+            else if (i == s && j >= s) || (i >= s && j == s)
+                v2(i,j) = v0;       %边界
+                else if i == hy
+                    v2(i,j) = (v1(i,j-1) + v1(i,j+1) + 2*v1(i-1,j))/4;
+                    else if j == hx
+                        v2(i,j) = (2*v1(i,j-1) + v1(i-1,j) + v1(i+1,j))/4;
+                        else
+                           v2(i,j) = (v1(i,j-1) + v1(i,j+1) + v1(i-1,j) + v1(i+1,j))/4;
+                        end
+                    end          %拉普拉斯方程
+                end
+            end
+        end
+    end
+end
+ % 一 一 一 一 一 一 一 一 一 一 一 结果成图 一 一一一 一一一一 一一 
+contour(v2,'k-')        %绘等值线图 
+hold on
