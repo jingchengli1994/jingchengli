@@ -1,0 +1,48 @@
+h = 1;             %步 长 
+v0 = 100;        %上边界电位 
+hx = 20*h+1;     %网格横向节点数 
+hy = 20*h+1;     %网格纵向节点数 
+%一 一 一  一 一 一 一 设置零级近似值 一一一一一一一一一一 
+v1 = zeros(hy,hx+hy-1);      %用零矩阵对网格各节点 电位进行初值化
+for i = 1 : hy
+    for j = 1 : (hx + hy-1)
+        if i == j
+            v1(i,j) = 100;
+        else if i == 1 || (i + j == hx + hy)
+                v1(i,j) = 0;
+            else if (j > i) && (i + j < hx + hy)
+                v1(i,j) = v0/2;
+                end
+             end
+        end
+    end
+end
+v2 = zeros(hy,hx+hy-1);          %／初值化结果变量
+%一 一 一一 一 一 一 一 以v1开始迭代计算v2一一一一一一
+for i = 2 : hy
+    for j = 2 : (hx + hy-1)
+        if (j > i) &&  (i + j < hx + hy)
+            v2(i,j) = (v1(i,j-1) + v1(i,j+1) + v1(i-1,j) + v1(i+1,j))/4;
+         end          %拉普拉斯方程
+    end
+end
+    %------- 用v2代替v1，以v1循环迭代计算v2--------------
+for k = 1:500       %循环次数
+    v1 = v2;
+    for i = 2 : hy
+        for j = 2 : (hx + hy-1)
+            if (j > i) &&  (i + j < hx + hy)
+            v2(i,j) = (v1(i,j-1) + v1(i,j+1) + v1(i-1,j) + v1(i+1,j))/4;
+            end          %拉普拉斯方程
+        end
+    end
+end
+% 一 一 一 一 一 一 一 一 一 一 一 结果成图 一 一一一 一一一一 一一
+
+hold on
+contour(v2,'k-')        %绘等值线图 
+axis([0,42,0,24.2494226]);
+axis square
+[Ex,Ey] = gradient(-v2);
+quiver(Ex,Ey)
+hold off
